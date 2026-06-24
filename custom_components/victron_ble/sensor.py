@@ -55,7 +55,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (SensorDeviceClass.CURRENT, Units.ELECTRIC_CURRENT_AMPERE): SensorEntityDescription(
         key=f"{SensorDeviceClass.CURRENT}_{Units.ELECTRIC_CURRENT_AMPERE}",
@@ -68,7 +68,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.BATTERY,
         native_unit_of_measurement=Units.PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=0,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.INPUT_CURRENT,
@@ -155,7 +155,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.OUTPUT_VOLTAGE,
@@ -165,7 +165,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.OUTPUT_CURRENT,
@@ -190,7 +190,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.BATTERY,
         native_unit_of_measurement=Units.PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=0,
+        suggested_display_precision=1,
     ),
     (
         SIGNAL_STRENGTH_KEY,
@@ -210,7 +210,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.MIDPOINT_VOLTAGE,
@@ -220,7 +220,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.BATTERY_VOLTAGE,
@@ -332,7 +332,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_2,
@@ -342,7 +342,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_3,
@@ -352,7 +352,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_4,
@@ -362,7 +362,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_5,
@@ -372,7 +372,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_6,
@@ -382,7 +382,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_7,
@@ -392,7 +392,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_8,
@@ -402,7 +402,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_9,
@@ -412,7 +412,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_10,
@@ -422,7 +422,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_11,
@@ -432,7 +432,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_12,
@@ -442,7 +442,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_13,
@@ -452,7 +452,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_14,
@@ -462,7 +462,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_15,
@@ -472,7 +472,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (
         VictronSensor.CELL_VOLTAGE_16,
@@ -482,7 +482,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=Units.ELECTRIC_POTENTIAL_VOLT,
         state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=2,
+        suggested_display_precision=1,
     ),
     (VictronSensor.BALANCER_STATUS, None): SensorEntityDescription(
         key=VictronSensor.BALANCER_STATUS,
@@ -509,17 +509,17 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
 # states into one. Note: suggested_display_precision only rounds the *display* and
 # does not reduce writes — this rounds the stored value. precision 0 -> int.
 _PRECISION_BY_KEY: Dict[str, int] = {
-    VictronSensor.CONSUMED_AH: 1,
+    VictronSensor.CONSUMED_AH: 0,
     VictronSensor.CONSUMED_ENERGY: 0,
     VictronSensor.OUTPUT_POWER: 0,
 }
 _PRECISION_BY_DEVICE_CLASS: Dict[SensorDeviceClass, int] = {
-    SensorDeviceClass.VOLTAGE: 2,
-    SensorDeviceClass.CURRENT: 1,
+    SensorDeviceClass.VOLTAGE: 1,
+    SensorDeviceClass.CURRENT: 0,
     SensorDeviceClass.POWER: 0,
     SensorDeviceClass.APPARENT_POWER: 0,
     SensorDeviceClass.TEMPERATURE: 1,
-    SensorDeviceClass.BATTERY: 0,
+    SensorDeviceClass.BATTERY: 1,
     SensorDeviceClass.ENERGY: 0,
     SensorDeviceClass.DURATION: 0,
 }
