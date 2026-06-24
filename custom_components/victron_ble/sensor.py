@@ -285,11 +285,17 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         key=VictronSensor.CONSUMED_ENERGY,
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=Units.ENERGY_WATT_HOUR,
-        state_class=SensorStateClass.TOTAL_INCREASING,
+        # Consumed energy tracks discharge since the last full charge and resets
+        # to 0 when recharged, so it is not monotonic. TOTAL (not TOTAL_INCREASING)
+        # permits resets/decreases without the "not strictly increasing" warning,
+        # while staying valid for the ENERGY device class.
+        state_class=SensorStateClass.TOTAL,
     ),
     (VictronSensor.CONSUMED_AH, "Ah"): SensorEntityDescription(
         key=VictronSensor.CONSUMED_AH,
-        device_class=SensorDeviceClass.ENERGY_STORAGE,
+        # No HA device_class fits charge (Ah); energy_storage expects Wh/kWh and
+        # triggers a unit-validation warning. Leave it classless with an icon.
+        icon="mdi:battery-minus",
         native_unit_of_measurement="Ah",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -497,6 +503,42 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
 }
 
 
+# Round native values at the source to cut HA recorder writes. The recorder
+# stores a row on every state *change*, so trimming jittery trailing digits
+# (a SmartShunt re-broadcasts voltage/current ~1 Hz) collapses many near-identical
+# states into one. Note: suggested_display_precision only rounds the *display* and
+# does not reduce writes — this rounds the stored value. precision 0 -> int.
+_PRECISION_BY_KEY: Dict[str, int] = {
+    VictronSensor.CONSUMED_AH: 1,
+    VictronSensor.CONSUMED_ENERGY: 0,
+    VictronSensor.OUTPUT_POWER: 0,
+}
+_PRECISION_BY_DEVICE_CLASS: Dict[SensorDeviceClass, int] = {
+    SensorDeviceClass.VOLTAGE: 2,
+    SensorDeviceClass.CURRENT: 1,
+    SensorDeviceClass.POWER: 0,
+    SensorDeviceClass.APPARENT_POWER: 0,
+    SensorDeviceClass.TEMPERATURE: 1,
+    SensorDeviceClass.BATTERY: 0,
+    SensorDeviceClass.ENERGY: 0,
+    SensorDeviceClass.DURATION: 0,
+}
+
+
+def _round_native_value(
+    description: SensorEntityDescription, value: int | float | None
+) -> int | float | None:
+    """Round a numeric native value per its key/device class to reduce writes."""
+    if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+        return value
+    precision = _PRECISION_BY_KEY.get(description.key)
+    if precision is None:
+        precision = _PRECISION_BY_DEVICE_CLASS.get(description.device_class)
+    if precision is None:
+        return value
+    return int(round(value)) if precision == 0 else round(value, precision)
+
+
 def sensor_update_to_bluetooth_data_update(
     sensor_update: SensorUpdate,
 ) -> PassiveBluetoothDataUpdate:
@@ -566,5 +608,7 @@ class VictronBluetoothSensorEntity(
 
     @property
     def native_value(self) -> int | float | None:
-        """Return the native value."""
-        return self.processor.entity_data.get(self.entity_key)
+        """Return the native value, rounded to cut recorder writes."""
+        return _round_native_value(
+            self.entity_description, self.processor.entity_data.get(self.entity_key)
+        )

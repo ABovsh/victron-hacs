@@ -396,7 +396,8 @@ class VictronBluetoothDeviceData(BluetoothData):
                 name="Consumed Ah",
                 native_unit_of_measurement="Ah",
                 native_value=parsed.get_consumed_ah(),
-                device_class=SensorDeviceClass.ENERGY_STORAGE,
+                # Ah is charge, not energy: energy_storage expects Wh/kWh and warns.
+                device_class=None,
             )
 
             aux_mode = parsed.get_aux_mode()
