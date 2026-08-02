@@ -1,0 +1,48 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    # Gated by repo var SONAR_ENABLED. Dependabot branches read the dependabot
+    # secret store, where SONAR_TOKEN doesn't exist — the scanner would fail
+    # with "Not authorized" on every bump PR. Skip instead of failing.
+    if: ${{ vars.SONAR_ENABLED == 'true' && github.actor != 'dependabot[bot]' }}
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements_test.txt pytest-cov
+
+      - name: Run tests with coverage for SonarCloud
+        run: >
+          pytest --cov=custom_components/victron_ble
+          --cov-report=xml:coverage.xml
+
+      - name: SonarCloud Scan
+        # sonarcloud-github-action is archived; sonarqube-scan-action succeeds it.
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "https://sonarcloud.io"

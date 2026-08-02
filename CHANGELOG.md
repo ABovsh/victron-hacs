@@ -24,6 +24,13 @@ three failures that had been invisible since the fork was created.
   documented install path led back to upstream.
 - Applied prettier to `README.md` and `CHANGELOG.md`; the pre-commit job had
   been failing on upstream's markdown formatting.
+- Added GitHub topics and a repository description; the HACS validator requires
+  topics, and a fork inherits neither from upstream.
+- Connected to SonarCloud (`ABovsh_victron-hacs`): `sonar-project.properties`
+  plus a `sonarcloud.yml` workflow gated on the `SONAR_ENABLED` repository
+  variable, matching the other integrations in this account. `device.py` is
+  excluded from coverage — only its battery-monitor branch runs on the hardware
+  this fork is maintained against. README carries the usual badge row.
 
 ## 0.1.8 — 2026-08-02
 

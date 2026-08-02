@@ -27,3 +27,8 @@ tts
 scenes.yaml
 scripts.yaml
 secrets.yaml
+
+# Test/coverage artefacts
+coverage.xml
+.coverage
+.pytest_cache/

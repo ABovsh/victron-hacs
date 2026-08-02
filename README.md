@@ -1,8 +1,19 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-
 # Victron Instant Readout Integration
 
-This integration allows exposing data from Victron devices with Instant Readout enabled in Home Assistant.
+> Home Assistant integration for Victron devices with Instant Readout enabled — SmartShunt, BMV, MPPT, Smart Battery Sense, Battery Protect, Orion DC/DC, SmartLithium, Lynx BMS. Passive Bluetooth, no connection to the device, no cloud.
+
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+![Version](https://img.shields.io/badge/version-0.1.9-blue?style=for-the-badge)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-41BDF5?style=for-the-badge&logo=home-assistant)
+
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=ABovsh_victron-hacs&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ABovsh_victron-hacs)
+[![Reliability](https://sonarcloud.io/api/project_badges/measure?project=ABovsh_victron-hacs&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=ABovsh_victron-hacs&metric=reliability_rating)
+[![Security](https://sonarcloud.io/api/project_badges/measure?project=ABovsh_victron-hacs&metric=security_rating)](https://sonarcloud.io/component_measures?id=ABovsh_victron-hacs&metric=security_rating)
+[![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=ABovsh_victron-hacs&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=ABovsh_victron-hacs&metric=sqale_rating)
+[![Coverage](https://img.shields.io/sonar/coverage/ABovsh_victron-hacs?server=https%3A%2F%2Fsonarcloud.io&style=for-the-badge&logo=sonarcloud&label=coverage)](https://sonarcloud.io/component_measures?id=ABovsh_victron-hacs&metric=coverage)
+
+- Issues: [github.com/ABovsh/victron-hacs/issues](https://github.com/ABovsh/victron-hacs/issues)
+- Changes: [CHANGELOG.md](CHANGELOG.md)
 
 ## Why this fork
 
