@@ -26,6 +26,14 @@ three failures that had been invisible since the fork was created.
   been failing on upstream's markdown formatting.
 - Added GitHub topics and a repository description; the HACS validator requires
   topics, and a fork inherits neither from upstream.
+- Test suite grown from 27 to 47 cases; every measured file is now at 100%
+  line coverage. The additions cover the paths a user actually walks: setup and
+  unload, the throttle reading its configured window, an options change
+  rebuilding the entry, bluetooth discovery pre-filling the form, duplicate
+  addresses aborting, both reconfigure outcomes, and both ways a bad key is
+  caught. The one that matters most drives a parsed advertisement through the
+  coordinator and asserts 52.7719 V lands in Home Assistant as `52.8` — the
+  throttle, the description lookup and the native-value rounding in one piece.
 - Connected to SonarCloud (`ABovsh_victron-hacs`): `sonar-project.properties`
   plus a `sonarcloud.yml` workflow gated on the `SONAR_ENABLED` repository
   variable, matching the other integrations in this account. `device.py` is

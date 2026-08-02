@@ -153,3 +153,21 @@ def test_round_native_value_passes_through_non_numeric():
     assert _round_native_value(description, None) is None
     assert _round_native_value(description, True) is True
     assert _round_native_value(description, "low_voltage") == "low_voltage"
+
+
+def test_description_without_a_device_key_is_skipped():
+    """A description carrying no device key cannot address an entity."""
+    orphan = DeviceKey("orphan")
+    update = SensorUpdate(
+        title=None,
+        devices={},
+        entity_descriptions={
+            orphan: SensorDescription(device_key=None, native_unit_of_measurement=None)
+        },
+        entity_values={orphan: SensorValue(orphan, "Orphan", 1)},
+    )
+
+    result = sensor_update_to_bluetooth_data_update(update)
+
+    assert result.entity_descriptions == {}
+    assert result.entity_data == {}
