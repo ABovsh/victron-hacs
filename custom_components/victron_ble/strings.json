@@ -5,18 +5,46 @@
         "data": {
           "name": "[%key:common::config_flow::data::name%]",
           "address": "[%key:common::config_flow::data::address%]",
-          "key": "[%key:common::config_flow::data::key%]"
+          "key": "Advertisement key"
+        },
+        "data_description": {
+          "key": "The 32-character hex Instant Readout key from VictronConnect."
+        }
+      },
+      "reconfigure": {
+        "title": "Update advertisement key",
+        "data": {
+          "key": "Advertisement key"
+        },
+        "data_description": {
+          "key": "VictronConnect issues a new key each time Instant Readout is re-paired."
         }
       }
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "invalid_key": "The advertisement key must be 32 hexadecimal characters (16 bytes).",
+      "key_mismatch": "This key does not match the advertisements the device is currently broadcasting.",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]"
     },
     "entity": {}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Victron BLE options",
+        "data": {
+          "throttle_seconds": "Minimum seconds between recorded updates"
+        },
+        "data_description": {
+          "throttle_seconds": "Victron devices advertise about once per second. Values are still parsed at full rate, but only written to Home Assistant this often. State and alarm changes are always written immediately. Set to 0 to disable throttling."
+        }
+      }
+    }
   }
 }

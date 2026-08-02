@@ -1,11 +1,14 @@
 {
   "config": {
     "abort": {
-      "already_configured": "Device is already configured"
+      "already_configured": "Device is already configured",
+      "reconfigure_successful": "Re-configuration was successful"
     },
     "error": {
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
+      "invalid_key": "The advertisement key must be 32 hexadecimal characters (16 bytes).",
+      "key_mismatch": "This key does not match the advertisements the device is currently broadcasting.",
       "unknown": "Unexpected error"
     },
     "step": {
@@ -13,7 +16,19 @@
         "data": {
           "name": "Name",
           "address": "Address",
-          "key": "Advertisement Key"
+          "key": "Advertisement key"
+        },
+        "data_description": {
+          "key": "The 32-character hex Instant Readout key from VictronConnect."
+        }
+      },
+      "reconfigure": {
+        "title": "Update advertisement key",
+        "data": {
+          "key": "Advertisement key"
+        },
+        "data_description": {
+          "key": "VictronConnect issues a new key each time Instant Readout is re-paired."
         }
       }
     },
@@ -21,12 +36,37 @@
       "sensor": {
         "operation_mode": {
           "state": {
-            "cancelling": "Cancelling",
-            "idle": "Idle",
-            "paused": "Paused",
-            "pausing": "Pausing",
-            "printing": "Printing"
+            "off": "Off",
+            "low_power": "Low power",
+            "fault": "Fault",
+            "bulk": "Bulk",
+            "absorption": "Absorption",
+            "float": "Float",
+            "storage": "Storage",
+            "equalize_manual": "Equalize (manual)",
+            "inverting": "Inverting",
+            "power_supply": "Power supply",
+            "starting_up": "Starting up",
+            "repeated_absorption": "Repeated absorption",
+            "recondition": "Recondition",
+            "battery_safe": "Battery safe",
+            "active": "Active",
+            "external_control": "External control",
+            "not_available": "Not available"
           }
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Victron BLE options",
+        "data": {
+          "throttle_seconds": "Minimum seconds between recorded updates"
+        },
+        "data_description": {
+          "throttle_seconds": "Victron devices advertise about once per second. Values are still parsed at full rate, but only written to Home Assistant this often. State and alarm changes are always written immediately. Set to 0 to disable throttling."
         }
       }
     }

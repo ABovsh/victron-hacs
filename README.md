@@ -1,8 +1,42 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 
 # Victron Instant Readout Integration
 
 This integration allows exposing data from Victron devices with Instant Readout enabled in Home Assistant.
+
+## Why this fork
+
+Fork of [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs). The
+upstream integration is a thin passive-BLE listener: it pushes a fresh state to
+Home Assistant on **every** advertisement, and Victron devices advertise at
+roughly 1 Hz with no scan-interval or throttle option. On a SmartShunt that is
+around 86 000 state writes per entity per day, which made it one of the largest
+single sources of recorder growth in the author's installation.
+
+What this fork changes:
+
+- **Throttling.** A configurable minimum interval between the states forwarded
+  to Home Assistant. Every advertisement is still parsed, so the data object
+  stays current — only the write to the recorder is suppressed. State and alarm
+  transitions bypass the throttle and are forwarded immediately, so nothing
+  event-like is ever dropped.
+- **Native-value rounding.** The recorder stores a row on every state *change*,
+  so trailing jitter digits are what actually create the rows.
+  `suggested_display_precision` does not help — it only rounds the display.
+  This fork rounds the stored value per sensor key and device class.
+- **Sensor metadata fixes.** Device and state classes corrected where the
+  upstream combinations produced HA unit-validation warnings (`consumed_ah`,
+  `consumed_energy`).
+- **Robustness.** An unknown sensor key coming from the `victron_ble` library no
+  longer raises inside the coordinator's update path, where a ~1 Hz exception
+  storm would otherwise stop the device from updating at all.
+- **Setup and reconfiguration.** The encryption key is validated at setup time
+  instead of silently producing a device with no entities, and the key and
+  throttle interval can be changed afterwards without deleting and re-adding
+  the device.
+
+Changes are tracked in [CHANGELOG.md](CHANGELOG.md). This fork is installed as a
+HACS **custom repository**, not from the HACS default list.
 
 Supported Devices & Entities:
 

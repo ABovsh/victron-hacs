@@ -168,15 +168,6 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         suggested_display_precision=1,
     ),
     (
-        VictronSensor.OUTPUT_CURRENT,
-        Units.ELECTRIC_CURRENT_AMPERE,
-    ): SensorEntityDescription(
-        key=VictronSensor.OUTPUT_CURRENT,
-        device_class=SensorDeviceClass.CURRENT,
-        native_unit_of_measurement=Units.ELECTRIC_CURRENT_AMPERE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    (
         VictronSensor.OUTPUT_POWER,
         Units.POWER_WATT,
     ): SensorEntityDescription(
@@ -184,13 +175,6 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=Units.POWER_WATT,
         state_class=SensorStateClass.MEASUREMENT,
-    ),
-    (SensorDeviceClass.BATTERY, Units.PERCENTAGE): SensorEntityDescription(
-        key=f"{SensorDeviceClass.BATTERY}_{Units.PERCENTAGE}",
-        device_class=SensorDeviceClass.BATTERY,
-        native_unit_of_measurement=Units.PERCENTAGE,
-        state_class=SensorStateClass.MEASUREMENT,
-        suggested_display_precision=1,
     ),
     (
         SIGNAL_STRENGTH_KEY,
@@ -259,7 +243,7 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         state_class=SensorStateClass.MEASUREMENT,
     ),
     (VictronSensor.AC_APPARENT_POWER, Units.POWER_VOLT_AMPERE): SensorEntityDescription(
-        key=VictronSensor.AC_CURRENT,
+        key=VictronSensor.AC_APPARENT_POWER,
         device_class=SensorDeviceClass.APPARENT_POWER,
         native_unit_of_measurement=Units.POWER_VOLT_AMPERE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -539,38 +523,68 @@ def _round_native_value(
     return int(round(value)) if precision == 0 else round(value, precision)
 
 
+# Unknown (key, unit) pairs are logged once each. Victron devices advertise at
+# ~1 Hz, so an un-deduplicated warning here would be a log flood.
+_WARNED_UNKNOWN: set[Tuple[Any, Any]] = set()
+
+
 def sensor_update_to_bluetooth_data_update(
     sensor_update: SensorUpdate,
 ) -> PassiveBluetoothDataUpdate:
-    """Convert a sensor update to a bluetooth data update."""
-    data = PassiveBluetoothDataUpdate(
+    """Convert a sensor update to a bluetooth data update.
+
+    Sensor keys the victron_ble library emits but SENSOR_DESCRIPTIONS does not
+    know are skipped rather than raising. A KeyError here happens inside the
+    coordinator's update path and would repeat on every advertisement, taking
+    the whole device down instead of just the one unmapped sensor.
+    """
+    descriptions: Dict[PassiveBluetoothEntityKey, Any] = {}
+    known: set[Any] = set()
+    for device_key, description in sensor_update.entity_descriptions.items():
+        if not description.device_key:
+            continue
+        map_key = (
+            description.device_key.key,
+            description.native_unit_of_measurement,
+        )
+        entity_description = SENSOR_DESCRIPTIONS.get(map_key)
+        if entity_description is None:
+            if map_key not in _WARNED_UNKNOWN:
+                _WARNED_UNKNOWN.add(map_key)
+                _LOGGER.warning(
+                    "Skipping unsupported Victron sensor %s (unit %s) — the "
+                    "victron_ble library reports it but this integration has no "
+                    "description for it",
+                    map_key[0],
+                    map_key[1],
+                )
+            continue
+        known.add(device_key)
+        descriptions[
+            PassiveBluetoothEntityKey(device_key.key, device_key.device_id)
+        ] = entity_description
+
+    return PassiveBluetoothDataUpdate(
         devices={
             device_id: sensor_device_info_to_hass_device_info(device_info)
             for device_id, device_info in sensor_update.devices.items()
         },
-        entity_descriptions={
-            PassiveBluetoothEntityKey(
-                device_key.key, device_key.device_id
-            ): SENSOR_DESCRIPTIONS[
-                (description.device_key.key, description.native_unit_of_measurement)
-            ]
-            for device_key, description in sensor_update.entity_descriptions.items()
-            if description.device_key
-        },
+        entity_descriptions=descriptions,
         entity_data={
             PassiveBluetoothEntityKey(
                 device_key.key, device_key.device_id
             ): sensor_values.native_value
             for device_key, sensor_values in sensor_update.entity_values.items()
+            if device_key in known
         },
         entity_names={
             PassiveBluetoothEntityKey(
                 device_key.key, device_key.device_id
             ): sensor_values.name
             for device_key, sensor_values in sensor_update.entity_values.items()
+            if device_key in known
         },
     )
-    return data
 
 
 async def async_setup_entry(

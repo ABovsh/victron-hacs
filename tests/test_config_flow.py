@@ -25,7 +25,7 @@ async def test_form(hass: HomeAssistant) -> None:
             {
                 "name": "test_device",
                 "address": "test-address",
-                "key": "test-key",
+                "key": "0123456789abcdef0123456789abcdef",
             },
         )
         await hass.async_block_till_done()
