@@ -51,7 +51,10 @@ jobs:
         uses: "hacs/action@main"
         with:
           category: "integration"
-          ignore: brands
+          # brands: this is a fork, not a default-list candidate.
+          # license: upstream keshavdv/victron-hacs ships no license, so this
+          # derived work has none to inherit and cannot invent one.
+          ignore: "brands license"
 
   hassfest:
     runs-on: "ubuntu-latest"

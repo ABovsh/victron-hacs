@@ -4,6 +4,27 @@ All notable changes to this fork are listed here. Versions before 0.1.3 are
 upstream [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs) and
 are not tracked in this file.
 
+## 0.1.9 — 2026-08-03
+
+First release whose CI has actually run. Enabling Actions on the fork surfaced
+three failures that had been invisible since the fork was created.
+
+- Hassfest rejected both `strings.json` and `translations/en.json`:
+  `data['config']['entity']` is not a valid key — entity translations belong at
+  the top level, not under `config`. The block was dead regardless: translating
+  enum states requires a `translation_key` on the entity description and no
+  description sets one, so the `operation_mode` names never reached the UI.
+  Removed rather than relocated; wire it up properly if an MPPT ever needs it.
+- Enabled issues on the repository. The HACS validator requires it and
+  `manifest.json` already advertised an `issue_tracker` URL that led nowhere.
+- HACS validation now ignores the `license` check as well as `brands`. Upstream
+  keshavdv/victron-hacs ships no license, so this derived work has none to
+  inherit and cannot grant one it does not hold.
+- README: the HACS install badge still pointed at `owner=keshavdv`, so the one
+  documented install path led back to upstream.
+- Applied prettier to `README.md` and `CHANGELOG.md`; the pre-commit job had
+  been failing on upstream's markdown formatting.
+
 ## 0.1.8 — 2026-08-02
 
 - `async_unload_entry()` raised `KeyError` when `hass.data[DOMAIN]` was never
@@ -11,7 +32,7 @@ are not tracked in this file.
   teardown. Now tolerates both the domain and the entry being absent.
 - CI actually runs the test suite. The `tests` job ended with
   `pytest ... --fixtures tests/` and a bare `tests/` on the following line: the
-  missing line continuation meant pytest only *listed* fixtures and the shell
+  missing line continuation meant pytest only _listed_ fixtures and the shell
   then tried to execute the directory. `DEFAULT_PYTHON` raised from 3.10 to
   3.13 (Home Assistant no longer supports 3.10), checkout/setup-python actions
   bumped to v4/v5, and `.github/workflows/constraints.txt` pins refreshed.

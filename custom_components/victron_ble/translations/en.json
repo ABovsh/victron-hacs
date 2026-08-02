@@ -29,31 +29,6 @@
           "key": "VictronConnect issues a new key each time Instant Readout is re-paired."
         }
       }
-    },
-    "entity": {
-      "sensor": {
-        "operation_mode": {
-          "state": {
-            "off": "Off",
-            "low_power": "Low power",
-            "fault": "Fault",
-            "bulk": "Bulk",
-            "absorption": "Absorption",
-            "float": "Float",
-            "storage": "Storage",
-            "equalize_manual": "Equalize (manual)",
-            "inverting": "Inverting",
-            "power_supply": "Power supply",
-            "starting_up": "Starting up",
-            "repeated_absorption": "Repeated absorption",
-            "recondition": "Recondition",
-            "battery_safe": "Battery safe",
-            "active": "Active",
-            "external_control": "External control",
-            "not_available": "Not available"
-          }
-        }
-      }
     }
   },
   "options": {

@@ -20,7 +20,7 @@ What this fork changes:
   stays current — only the write to the recorder is suppressed. State and alarm
   transitions bypass the throttle and are forwarded immediately, so nothing
   event-like is ever dropped.
-- **Native-value rounding.** The recorder stores a row on every state *change*,
+- **Native-value rounding.** The recorder stores a row on every state _change_,
   so trailing jitter digits are what actually create the rows.
   `suggested_display_precision` does not help — it only rounds the display.
   This fork rounds the stored value per sensor key and device class.
@@ -110,8 +110,8 @@ Supported Devices & Entities:
 
 ## HACS
 
-1. Add the integration through this link:
-   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=keshavdv&repository=victron-hacs&category=integration)
+1. Add this fork as a HACS **custom repository**, then add the integration:
+   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ABovsh&repository=victron-hacs&category=integration)
 2. Restart Home Assistant
 3. Setup integration via the integration page.
 
@@ -138,7 +138,7 @@ You can find both values using the **VictronConnect App**:
 4. Scroll to the **Encryption Data** section.
 5. Tap **SHOW** to reveal:
    - **MAC Address**
-   - **Encryption Key** (called *Advertisement Key* in this integration)
+   - **Encryption Key** (called _Advertisement Key_ in this integration)
 
 > 💡 Save these values to paste into the Home Assistant configuration screen when prompted.
 
