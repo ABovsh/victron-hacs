@@ -9,7 +9,7 @@ from bleak.backends.scanner import AdvertisementData
 from habluetooth import BluetoothServiceInfoBleak
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from victron_ble.exceptions import AdvertisementKeyMismatchError
 
@@ -234,7 +234,7 @@ async def test_options_flow_rejects_an_out_of_range_throttle(
     await hass.async_block_till_done()
 
     result = await hass.config_entries.options.async_init(entry.entry_id)
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidData, match="throttle_seconds"):
         await hass.config_entries.options.async_configure(
             result["flow_id"], {CONF_THROTTLE_SECONDS: 99999}
         )
