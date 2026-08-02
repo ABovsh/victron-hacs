@@ -89,9 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     address = entry.unique_id
     assert address is not None
     data = VictronBluetoothDeviceData(entry.data["key"])
-    throttle_seconds = entry.options.get(
-        CONF_THROTTLE_SECONDS, UPDATE_THROTTLE_SECONDS
-    )
+    throttle_seconds = entry.options.get(CONF_THROTTLE_SECONDS, UPDATE_THROTTLE_SECONDS)
     coordinator = hass.data.setdefault(DOMAIN, {})[entry.entry_id] = (
         PassiveBluetoothProcessorCoordinator(
             hass,
@@ -117,6 +115,8 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)
+        # A setup that failed part-way never stored anything, so tolerate both
+        # the domain and the entry being absent rather than raising on teardown.
+        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
 
     return unload_ok

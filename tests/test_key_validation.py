@@ -1,4 +1,5 @@
 """Tests for encryption-key validation in the config flow."""
+
 import pytest
 
 from custom_components.victron_ble.config_flow import InvalidKey, validate_key

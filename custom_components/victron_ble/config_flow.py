@@ -1,4 +1,5 @@
 """Config flow for victron_ble integration."""
+
 from __future__ import annotations
 
 import logging
@@ -168,11 +169,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
             errors=errors or None,
         )
 
-    async def async_step_unignore(self, user_input):
-        unique_id = user_input["unique_id"]
-        await self.async_set_unique_id(unique_id)
-        self.async_abort(reason="discovery_error")
-
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Let the throttle interval be tuned per device."""
@@ -191,17 +187,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
-                        CONF_THROTTLE_SECONDS, default=current
-                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3600)),
+                    vol.Required(CONF_THROTTLE_SECONDS, default=current): vol.All(
+                        vol.Coerce(int), vol.Range(min=0, max=3600)
+                    ),
                 }
             ),
         )
-
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""

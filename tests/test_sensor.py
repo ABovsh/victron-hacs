@@ -1,4 +1,5 @@
 """Tests for the victron_ble sensor platform."""
+
 import logging
 
 import pytest
@@ -24,6 +25,7 @@ def reset_warned_unknown():
     _WARNED_UNKNOWN.clear()
     yield
     _WARNED_UNKNOWN.clear()
+
 
 KNOWN_KEY = str(SensorDeviceClass.VOLTAGE)
 KNOWN_UNIT = Units.ELECTRIC_POTENTIAL_VOLT
@@ -90,7 +92,9 @@ def test_descriptions_use_their_own_map_key():
     """Guards against copy-paste: AC apparent power once carried the AC current key."""
     for (key, _unit), description in SENSOR_DESCRIPTIONS.items():
         if isinstance(key, VictronSensor):
-            assert description.key == key, f"{key} maps to a description for {description.key}"
+            assert (
+                description.key == key
+            ), f"{key} maps to a description for {description.key}"
 
 
 def test_no_duplicate_map_entries():
@@ -103,7 +107,9 @@ def test_no_duplicate_map_entries():
     for node in ast.walk(tree):
         if isinstance(node, ast.Dict) and len(node.keys) > 20:
             literals = [ast.dump(k) for k in node.keys if k is not None]
-            assert len(literals) == len(set(literals)), "duplicate SENSOR_DESCRIPTIONS key"
+            assert len(literals) == len(
+                set(literals)
+            ), "duplicate SENSOR_DESCRIPTIONS key"
             break
     else:
         raise AssertionError("SENSOR_DESCRIPTIONS literal not found")

@@ -4,6 +4,36 @@ All notable changes to this fork are listed here. Versions before 0.1.3 are
 upstream [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs) and
 are not tracked in this file.
 
+## 0.1.8 — 2026-08-02
+
+- `async_unload_entry()` raised `KeyError` when `hass.data[DOMAIN]` was never
+  populated, turning a setup that failed part-way into a second failure on
+  teardown. Now tolerates both the domain and the entry being absent.
+- CI actually runs the test suite. The `tests` job ended with
+  `pytest ... --fixtures tests/` and a bare `tests/` on the following line: the
+  missing line continuation meant pytest only *listed* fixtures and the shell
+  then tried to execute the directory. `DEFAULT_PYTHON` raised from 3.10 to
+  3.13 (Home Assistant no longer supports 3.10), checkout/setup-python actions
+  bumped to v4/v5, and `.github/workflows/constraints.txt` pins refreshed.
+- `requirements_test.txt` no longer pins
+  `pytest-homeassistant-custom-component==0.13.32`, which targeted Home
+  Assistant 2024 and could not test the code as it actually runs. Dropped the
+  bogus `serial` dependency (unrelated PyPI package; `pyserial` is the real
+  one) and added `aiousbwatcher`, which Home Assistant's bluetooth import chain
+  needs. `requirements_dev.txt` trimmed to what is used — `gitchangelog`,
+  `mkdocs`, `codecov`, `coverage` and `pytest-cov` had no configuration or
+  call site anywhere in the repository.
+- `tests/test_config_flow.py` uses the `mock_bluetooth` fixture; without it the
+  test needed a real HCI socket, which no CI runner has.
+- Removed project-template leftovers: `Makefile` (104 lines, every target
+  referencing a non-existent `pyproject.toml` and `pip install -e .[test]`),
+  `.devcontainer/`, `.vscode/`, `scripts/develop`, `.github/labels.yml`,
+  `.github/workflows/labeler.yml` and `.github/workflows/release-drafter.yml`.
+- Removed dead code: `CannotConnect` and `InvalidAuth` (never raised, never
+  caught) and `async_step_unignore()`, which called `self.async_abort()`
+  without returning it and so returned `None` from a flow step. The now-unused
+  `cannot_connect` and `invalid_auth` strings went with them.
+
 ## 0.1.7 — 2026-08-02
 
 - `sensor_update_to_bluetooth_data_update()` no longer indexes

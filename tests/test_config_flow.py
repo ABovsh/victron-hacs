@@ -1,4 +1,5 @@
 """Test the victron_ble config flow."""
+
 from unittest.mock import patch
 
 from homeassistant import config_entries
@@ -8,8 +9,12 @@ from homeassistant.data_entry_flow import FlowResultType
 from custom_components.victron_ble.const import DOMAIN
 
 
-async def test_form(hass: HomeAssistant) -> None:
-    """Test we get the form."""
+async def test_form(hass: HomeAssistant, mock_bluetooth: None) -> None:
+    """Test we get the form.
+
+    mock_bluetooth keeps the bluetooth integration from opening a real HCI
+    socket, which no CI runner (and no dev sandbox) has.
+    """
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -35,6 +40,6 @@ async def test_form(hass: HomeAssistant) -> None:
     assert result2["data"] == {
         "name": "test_device",
         "address": "test-address",
-        "key": "test-key",
+        "key": "0123456789abcdef0123456789abcdef",
     }
     assert len(mock_setup_entry.mock_calls) == 1

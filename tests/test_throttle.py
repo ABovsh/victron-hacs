@@ -1,4 +1,5 @@
 """Tests for the BLE update throttle in __init__.py."""
+
 import time
 
 import pytest

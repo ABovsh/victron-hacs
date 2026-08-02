@@ -29,7 +29,15 @@ What this fork changes:
   `consumed_energy`).
 - **Robustness.** An unknown sensor key coming from the `victron_ble` library no
   longer raises inside the coordinator's update path, where a ~1 Hz exception
-  storm would otherwise stop the device from updating at all.
+  storm would otherwise stop the device from updating at all. Unloading an entry
+  whose setup never completed no longer raises either.
+- **Less repository.** The upstream tree carried a project template's leftovers —
+  a `Makefile` whose every target referenced a `pyproject.toml` that does not
+  exist, a devcontainer, VS Code settings, a release drafter and a PR labeler for
+  a fork that cuts no releases and takes no pull requests. All removed. The test
+  job in CI never ran the tests (a missing line continuation turned the last
+  argument into `pytest --fixtures`, which only lists fixtures); it runs them now,
+  on the Python version Home Assistant actually requires.
 - **Setup and reconfiguration.** The encryption key is validated at setup time
   instead of silently producing a device with no entities, and the key and
   throttle interval can be changed afterwards without deleting and re-adding

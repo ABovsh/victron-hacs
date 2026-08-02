@@ -5,8 +5,6 @@
       "reconfigure_successful": "Re-configuration was successful"
     },
     "error": {
-      "cannot_connect": "Failed to connect",
-      "invalid_auth": "Invalid authentication",
       "invalid_key": "The advertisement key must be 32 hexadecimal characters (16 bytes).",
       "key_mismatch": "This key does not match the advertisements the device is currently broadcasting.",
       "unknown": "Unexpected error"
