@@ -677,5 +677,3 @@ class VictronBluetoothDeviceData(BluetoothData):
                     native_value=voltage * current,
                     device_class=SensorDeviceClass.POWER,
                 )
-
-        return
