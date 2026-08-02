@@ -4,6 +4,33 @@ All notable changes to this fork are listed here. Versions before 0.1.3 are
 upstream [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs) and
 are not tracked in this file.
 
+## 0.1.10 — 2026-08-03
+
+Triage of the 58 open issues on the upstream project, which has had no commit
+since 2025-12-17. Everything below was reproducible in the code.
+
+- An advertisement the `victron_ble` library cannot parse no longer takes the
+  device down. Victron keeps extending its enums and frame layouts, and an
+  unknown value raised straight out of the coordinator's update path — at ~1 Hz
+  that is an exception storm and every sensor on that device stops reporting.
+  One reporter saw 9468 occurrences before working out what had happened. The
+  parse is now guarded per advertisement and logged once per device, cleared
+  as soon as that device parses again. Other devices were never affected and
+  still are not. Upstream #209, #156, #212, #131, #146.
+- A solar charger's external load reading of 0 A was discarded because the
+  guard tested truthiness rather than `is not None`. Switching the load output
+  off left the sensor stuck at its last non-zero value until it went
+  unavailable, silently corrupting any daily total built on it. Upstream #140.
+- Solar yield today was reported in watt-hours while declared as
+  `SensorDeviceClass.CURRENT`. Corrected to `ENERGY`.
+- An unrecognised device model now warns once instead of logging an error on
+  every advertisement for as long as it is in range. Upstream #156.
+
+Documented in the README rather than changed: `consumed_energy` is an estimate
+(`current voltage × consumed Ah`, not the integral of V×I), and two defects
+that live in the `victron_ble` library rather than here — upstream #154 and
+#210.
+
 ## 0.1.9 — 2026-08-03
 
 First release whose CI has actually run. Enabling Actions on the fork surfaced

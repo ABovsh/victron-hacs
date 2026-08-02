@@ -75,6 +75,12 @@ class VictronSensor(StrEnum):
     ALARM_NOTIFICATION = "alarm_notification"
 
 
+# Addresses already warned about, so a ~1 Hz advertisement stream produces one
+# log line per device rather than one per advertisement. Cleared for a device
+# as soon as it parses again, so a later, different failure is still reported.
+_WARNED_PARSE_FAILURES: set[str] = set()
+
+
 class VictronBluetoothDeviceData(BluetoothData):
     """Data for Victron BLE sensors."""
 
@@ -82,6 +88,21 @@ class VictronBluetoothDeviceData(BluetoothData):
         """Initialize the class."""
         super().__init__()
         self.key = key
+
+    @staticmethod
+    def _warn_parse_failure(address: str, err: Exception) -> None:
+        """Log a parse failure once per device."""
+        if address in _WARNED_PARSE_FAILURES:
+            return
+        _WARNED_PARSE_FAILURES.add(address)
+        _LOGGER.warning(
+            "Could not parse the advertisement from Victron device %s: %s. "
+            "Other devices are unaffected; this is logged once until %s "
+            "parses successfully again",
+            address,
+            err,
+            address,
+        )
 
     def _start_update(self, service_info: BluetoothServiceInfo) -> None:
         """Update from BLE advertisement data."""
@@ -100,7 +121,19 @@ class VictronBluetoothDeviceData(BluetoothData):
         for mfr_id, mfr_data in manufacturer_data.items():
             if mfr_id != 0x02E1 or not mfr_data.startswith(b"\x10"):
                 continue
-            self._process_mfr_data(address, local_name, mfr_id, mfr_data, service_uuids)
+            try:
+                self._process_mfr_data(
+                    address, local_name, mfr_id, mfr_data, service_uuids
+                )
+            except Exception as err:  # noqa: BLE001
+                # One advertisement the library cannot parse must not take the
+                # device down. Victron keeps extending its enums and frame
+                # layouts, and an unknown value raises out of the coordinator's
+                # update path — at ~1 Hz that is an exception storm and every
+                # sensor of that device stops. Warn once per device instead.
+                self._warn_parse_failure(address, err)
+            else:
+                _WARNED_PARSE_FAILURES.discard(address)
 
     def _process_mfr_data(
         self,
@@ -113,8 +146,10 @@ class VictronBluetoothDeviceData(BluetoothData):
         """Parser for Victron sensors."""
         device_parser = detect_device_type(data)
         if not device_parser:
-            _LOGGER.error("Could not identify Victron device type")
-            return
+            # Raise rather than return so this shares the caller's warn-once
+            # latch: an unsupported model would otherwise log on every
+            # advertisement for as long as it is in range.
+            raise RuntimeError("device type not recognised by victron_ble")
         parsed = device_parser(self.key).parse(data)
         _LOGGER.debug(f"Handle Victron BLE advertisement data: {parsed._data}")
         self.set_device_type(parsed.get_model_name())
@@ -465,7 +500,7 @@ class VictronBluetoothDeviceData(BluetoothData):
                 key=VictronSensor.YIELD_TODAY,
                 native_unit_of_measurement=Units.ENERGY_WATT_HOUR,
                 native_value=parsed.get_yield_today(),
-                device_class=SensorDeviceClass.CURRENT,
+                device_class=SensorDeviceClass.ENERGY,
             )
             self.update_sensor(
                 key=VictronSensor.OPERATION_MODE,
@@ -479,7 +514,10 @@ class VictronBluetoothDeviceData(BluetoothData):
                 native_value=parsed.get_charger_error().name.lower(),
                 device_class=SensorDeviceClass.ENUM,
             )
-            if parsed.get_external_device_load():
+            # `is not None`, not truthiness: 0 A is a real reading (the load
+            # output is switched off) and dropping it leaves the sensor stuck
+            # at its last non-zero value until it goes unavailable.
+            if parsed.get_external_device_load() is not None:
                 self.update_sensor(
                     key=VictronSensor.EXTERNAL_DEVICE_LOAD,
                     native_unit_of_measurement=Units.ELECTRIC_CURRENT_AMPERE,
