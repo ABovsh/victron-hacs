@@ -1,0 +1,13 @@
+# Gitleaks configuration — default ruleset plus this project's allowlist.
+# The VE.Direct/BLE encryption key is supplied through the HA config entry;
+# it is never committed. Test suites use obvious repeating-hex dummies.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Obvious dummy encryption keys in the test suite"
+regexTarget = "line"
+regexes = [
+  '''(0123456789abcdef|0123456789ABCDEF|fedcba9876543210|FEDCBA9876543210)''',
+]
