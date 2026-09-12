@@ -4,7 +4,7 @@ All notable changes to this fork are listed here. Versions before 0.1.3 are
 upstream [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs) and
 are not tracked in this file.
 
-## Unreleased
+## 0.2.0 — 2026-09-12
 
 ### ⚠️ Breaking
 

@@ -17,7 +17,7 @@
 
 ## Why this fork
 
-### SmartShunt energy and recorder behaviour (working branch)
+### SmartShunt energy and recorder behaviour
 
 Charged kWh and Discharged kWh integrate received power samples separately,
 using the previous sample over each interval. They start at zero when first
