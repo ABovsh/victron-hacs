@@ -534,7 +534,7 @@ _PRECISION_BY_DEVICE_CLASS_UNIT: Dict[Tuple[Any, Any], int] = {
     (SensorDeviceClass.ENERGY, Units.ENERGY_WATT_HOUR): 0,
     (SensorDeviceClass.ENERGY, Units.ENERGY_KILO_WATT_HOUR): 3,
 }
-_PRECISION_BY_DEVICE_CLASS: Dict[SensorDeviceClass, int] = {
+_PRECISION_BY_DEVICE_CLASS: Dict[Any, int] = {
     SensorDeviceClass.VOLTAGE: 1,
     SensorDeviceClass.CURRENT: 0,
     SensorDeviceClass.POWER: 0,
@@ -559,7 +559,7 @@ _PRECISION_BY_DEVICE_CLASS: Dict[SensorDeviceClass, int] = {
 # Without this slack the band would swallow a step it is meant to pass.
 _DEADBAND_EPSILON = 1e-9
 _DEADBAND_BY_KEY: Dict[str, float] = {}
-_DEADBAND_BY_DEVICE_CLASS: Dict[SensorDeviceClass, float] = {
+_DEADBAND_BY_DEVICE_CLASS: Dict[Any, float] = {
     SensorDeviceClass.VOLTAGE: 0.2,
     SensorDeviceClass.CURRENT: 0.5,
     SensorDeviceClass.POWER: 25.0,

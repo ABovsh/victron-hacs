@@ -105,8 +105,10 @@ class VictronBluetoothDeviceData(BluetoothData):
     def update(self, data) -> SensorUpdate:
         """Publish only complete decoded frames; never refresh stale data."""
         self._frame_valid = False
-        self._sensor_values_updates = {}
-        self._sensor_descriptions_updates = {}
+        # Clear in place rather than rebinding: these are the parent's typed
+        # dicts, and a bare {} re-declares them as untyped.
+        self._sensor_values_updates.clear()
+        self._sensor_descriptions_updates.clear()
         result = super().update(data)
         if not self._frame_valid:
             self.consecutive_failures += 1
