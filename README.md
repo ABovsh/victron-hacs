@@ -24,13 +24,20 @@ using the previous sample over each interval. They start at zero when first
 installed, persist across restarts, and publish to Home Assistant every five
 minutes at 0.001 kWh resolution. Missing packets spanning more than ten seconds
 are not extrapolated, so these are observed-energy estimates, not billing meters.
-An abrupt host failure can lose up to five minutes since the last checkpoint.
+An abrupt host failure can lose up to 60 seconds since the last checkpoint.
 
 The existing Consumed Energy entity remains an instantaneous estimate of the
 charge deficit (`voltage × consumed Ah`), not cumulative discharged energy.
-It now publishes at most every five minutes and has no long-term statistics.
-Use the new charged/discharged counters for battery energy accounting.
-Existing recorded history is not deleted.
+It now publishes at most every five minutes, has no long-term statistics, and
+is disabled by default — it is exactly `voltage × consumed Ah × -1`, and both
+inputs already have their own recorded entities. Use the new charged/discharged
+counters for battery energy accounting. Existing recorded history is not
+deleted and existing registry choices are preserved.
+
+Voltage, current and power publish only after moving 0.2 V, 0.5 A or 25 W from
+the last published value. Rounding removes decimals but cannot stop a gauge
+dithering across the step that is left, which is what a deadband against the
+last published value fixes. State of charge has no deadband.
 
 Normal numeric telemetry has a 60-second minimum interval. Alarms remain
 immediate; they do not accelerate energy-counter or time-estimate publication.

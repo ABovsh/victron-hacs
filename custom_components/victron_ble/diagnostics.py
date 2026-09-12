@@ -8,6 +8,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 
 from .const import DOMAIN
 
@@ -18,7 +19,7 @@ def _isoformat(value: datetime | None) -> str | None:
 
 
 async def async_get_config_entry_diagnostics(
-    _hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return operational health only, never entry or advertisement data.
 
@@ -26,7 +27,7 @@ async def async_get_config_entry_diagnostics(
     grant access to its advertisements.  The diagnostics download therefore
     intentionally contains only the coordinator's aggregate parse health.
     """
-    coordinator = _hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
     device_data = getattr(coordinator, "device_data", None)
     last_success_monotonic = getattr(device_data, "last_success_monotonic", None)
     age_seconds = (
@@ -35,8 +36,13 @@ async def async_get_config_entry_diagnostics(
         else None
     )
 
+    # Read from the loaded manifest: a literal here goes stale on the next bump
+    # and a diagnostics download that misreports its own version is worse than
+    # one that omits it.
+    integration = await async_get_integration(hass, DOMAIN)
+
     return {
-        "integration_version": "0.1.10",
+        "integration_version": integration.version,
         "health": {
             "available": getattr(coordinator, "available", None),
             "last_success_utc": _isoformat(

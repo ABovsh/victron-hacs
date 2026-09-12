@@ -1,6 +1,8 @@
 """Tests for the deliberately minimal Victron BLE diagnostics download."""
 
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 from homeassistant.core import HomeAssistant
@@ -37,8 +39,11 @@ async def test_diagnostics_reports_only_parse_health(
 
     diagnostics = await async_get_config_entry_diagnostics(hass, entry)
 
+    manifest_version = json.loads(
+        Path("custom_components/victron_ble/manifest.json").read_text()
+    )["version"]
     assert diagnostics == {
-        "integration_version": "0.1.10",
+        "integration_version": manifest_version,
         "health": {
             "available": True,
             "last_success_utc": "2026-09-11T12:30:00+00:00",

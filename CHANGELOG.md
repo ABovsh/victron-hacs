@@ -8,12 +8,26 @@ are not tracked in this file.
 
 ### ⚠️ Breaking
 
+- HACS now installs this integration from a release asset. `hacs.json` sets
+  `zip_release` with `filename: victron_ble.zip`, and every published release
+  carries that zip. Installing from a branch is no longer supported.
 - Consumed Energy, time-remaining estimates, RSSI and individual cell-voltage
   sensors no longer generate long-term statistics. Existing history is retained;
   entity IDs and units are unchanged. Diagnostic sensors are disabled by default
   for new installations; existing registry choices are preserved.
+- Consumed Energy is disabled by default. It is `voltage × consumed Ah × -1`,
+  and both inputs are published as their own entities with long-term
+  statistics, so every row it wrote was recomputable from recorded data. It
+  measured 285 state rows per day on a live SmartShunt. Existing installations
+  keep their registry choice and their recorded history; enable it under the
+  device page if you read it directly.
 - Numeric publication has a 60-second minimum. Consumed Energy, charged and
   discharged energy counters, and time estimates publish every five minutes.
+- Voltage, current and power publish only when they move at least 0.2 V, 0.5 A
+  or 25 W from the last published value. Rounding alone cannot stop a gauge
+  dithering across the step it is rounded to: a live SmartShunt wrote 325
+  voltage rows per day flipping between 52.6, 52.7 and 52.8 V. State of charge
+  is deliberately excluded and keeps its 0.1 % steps.
 
 ### Changes
 
@@ -23,7 +37,10 @@ are not tracked in this file.
   recover on the next valid frame. Missing numeric measurements are unavailable.
 - Add persistent SmartShunt charged/discharged kWh counters, calculated from
   received power samples. Reception gaps over ten seconds and restarts are not
-  extrapolated. Checkpoint every five minutes and on orderly unload/shutdown.
+  extrapolated. Checkpoint every 60 seconds and on orderly unload/shutdown.
+  The counters are `total_increasing`, and Home Assistant reads a drop of more
+  than 10 % as a counter reset, so the window an unclean shutdown can lose is
+  kept short enough not to trip that on a young counter.
 - Keep the existing Consumed Energy estimate at a five-minute cadence even when
   alarms bypass the normal publication throttle.
 - Add a diagnostics download containing decode health without keys or addresses.

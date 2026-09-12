@@ -22,7 +22,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.sensor import sensor_device_info_to_hass_device_info
 from sensor_state_data.data import SensorUpdate
@@ -273,7 +273,12 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[str, Optional[str]], Any] = {
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=Units.ENERGY_WATT_HOUR,
         # Voltage times charge deficit is an estimate, not an energy counter.
+        # It is also exactly `voltage * consumed_ah * -1`, and both inputs are
+        # published as their own entities WITH long-term statistics, so every
+        # row this writes is recomputable from data the recorder already holds.
+        # Measured at 285 rows/day on a live SmartShunt for no added information.
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
     ),
     (VictronSensor.CONSUMED_AH, "Ah"): SensorEntityDescription(
         key=VictronSensor.CONSUMED_AH,
@@ -522,6 +527,13 @@ _PRECISION_BY_KEY: Dict[str, int] = {
     VictronSensor.CONSUMED_ENERGY: 0,
     VictronSensor.OUTPUT_POWER: 0,
 }
+# A device class alone does not fix the right number of decimals: ENERGY is
+# whole numbers in Wh and milli-resolution in kWh. Anything keyed here by class
+# alone must be a class whose unit is unambiguous across Victron devices.
+_PRECISION_BY_DEVICE_CLASS_UNIT: Dict[Tuple[Any, Any], int] = {
+    (SensorDeviceClass.ENERGY, Units.ENERGY_WATT_HOUR): 0,
+    (SensorDeviceClass.ENERGY, Units.ENERGY_KILO_WATT_HOUR): 3,
+}
 _PRECISION_BY_DEVICE_CLASS: Dict[SensorDeviceClass, int] = {
     SensorDeviceClass.VOLTAGE: 1,
     SensorDeviceClass.CURRENT: 0,
@@ -529,9 +541,46 @@ _PRECISION_BY_DEVICE_CLASS: Dict[SensorDeviceClass, int] = {
     SensorDeviceClass.APPARENT_POWER: 0,
     SensorDeviceClass.TEMPERATURE: 1,
     SensorDeviceClass.BATTERY: 1,
-    SensorDeviceClass.ENERGY: 0,
     SensorDeviceClass.DURATION: 0,
 }
+
+# Rounding removes decimals; it cannot stop a gauge dithering across the step
+# that is left. On this SmartShunt `voltage` was already stored at 0.1 V and
+# still wrote 325 rows/day flipping 52.6 / 52.7 / 52.8. Only a deadband against
+# the LAST PUBLISHED value fixes that, and it must be the last published one so
+# that slow one-way drift still gets through.
+#
+# MEASUREMENT gauges only. Suppressing a publication of a TOTAL or
+# TOTAL_INCREASING counter would stall the sum its statistics are built from.
+# State of charge is deliberately absent: it is the most-read number here and
+# its 0.1 % steps are worth their rows.
+# Voltage is stored at 0.1 V against a 0.2 V band, so every comparison lands
+# exactly on the boundary and binary floats put 52.4 - 52.2 at 0.19999999999.
+# Without this slack the band would swallow a step it is meant to pass.
+_DEADBAND_EPSILON = 1e-9
+_DEADBAND_BY_KEY: Dict[str, float] = {}
+_DEADBAND_BY_DEVICE_CLASS: Dict[SensorDeviceClass, float] = {
+    SensorDeviceClass.VOLTAGE: 0.2,
+    SensorDeviceClass.CURRENT: 0.5,
+    SensorDeviceClass.POWER: 25.0,
+}
+
+
+def _deadband(description: SensorEntityDescription) -> float | None:
+    """Return the publish deadband for *description*, or None if it has none."""
+    if description.state_class is not SensorStateClass.MEASUREMENT:
+        return None
+    band = _DEADBAND_BY_KEY.get(description.key)
+    if band is None:
+        band = _DEADBAND_BY_DEVICE_CLASS.get(description.device_class)
+    return band
+
+
+def _numeric(value: Any) -> float | None:
+    """Return *value* as a float, or None if it is not a plain number."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
 
 
 def _round_native_value(
@@ -541,6 +590,10 @@ def _round_native_value(
     if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
         return value
     precision = _PRECISION_BY_KEY.get(description.key)
+    if precision is None:
+        precision = _PRECISION_BY_DEVICE_CLASS_UNIT.get(
+            (description.device_class, description.native_unit_of_measurement)
+        )
     if precision is None:
         precision = _PRECISION_BY_DEVICE_CLASS.get(description.device_class)
     if precision is None:
@@ -644,6 +697,33 @@ class VictronBluetoothSensorEntity(
     SensorEntity,
 ):
     """Representation of a Victron device that emits Instant Readout advertisements."""
+
+    # The last value actually written to the state machine, or None when the
+    # entity has never published or has since gone unavailable.
+    _published_value: float | None = None
+
+    @callback
+    def _handle_processor_update(self, new_data: Any) -> None:
+        """Write a state only when the value has left the deadband.
+
+        `new_data is None` is the availability path and must always be written,
+        and it clears the band so the first reading after a recovery publishes.
+        """
+        if new_data is None:
+            self._published_value = None
+            super()._handle_processor_update(new_data)
+            return
+        value = _numeric(self.native_value)
+        band = _deadband(self.entity_description)
+        if (
+            band is not None
+            and value is not None
+            and self._published_value is not None
+            and abs(value - self._published_value) < band - _DEADBAND_EPSILON
+        ):
+            return
+        self._published_value = value
+        super()._handle_processor_update(new_data)
 
     @property
     def available(self) -> bool:

@@ -525,15 +525,23 @@ class VictronBluetoothDeviceData(BluetoothData):
                 else None
             )
             self.energy.update(power, time.monotonic())
+            # The library pins precision to 2 during update(), which on a kWh
+            # counter is 10 Wh steps — too coarse for a total_increasing sum.
+            # set_precision is instance state shared by every sensor of every
+            # later frame, so widen it only around these two and put it back.
+            previous_precision = self.precision
             self.set_precision(6)
-            for key, total in self.energy.as_dict().items():
-                self.update_sensor(
-                    key=key,
-                    name=key.replace("_", " ").capitalize(),
-                    native_unit_of_measurement=Units.ENERGY_KILO_WATT_HOUR,
-                    native_value=total if power is not None else None,
-                    device_class=DataSensorDeviceClass.ENERGY,
-                )
+            try:
+                for key, total in self.energy.as_dict().items():
+                    self.update_sensor(
+                        key=key,
+                        name=key.replace("_", " ").capitalize(),
+                        native_unit_of_measurement=Units.ENERGY_KILO_WATT_HOUR,
+                        native_value=total if power is not None else None,
+                        device_class=DataSensorDeviceClass.ENERGY,
+                    )
+            finally:
+                self.set_precision(previous_precision)
         elif isinstance(parsed, BatterySenseData):
             self.update_predefined_sensor(
                 SensorLibrary.TEMPERATURE__CELSIUS, parsed.get_temperature()

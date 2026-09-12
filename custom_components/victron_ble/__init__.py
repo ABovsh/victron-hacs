@@ -23,6 +23,16 @@ from sensor_state_data import SensorUpdate
 from .const import CONF_THROTTLE_SECONDS, DOMAIN, UPDATE_THROTTLE_SECONDS
 from .device import VictronBluetoothDeviceData
 
+# How often the lifetime energy counters are checkpointed to .storage.
+#
+# An unclean shutdown loses whatever accumulated since the last checkpoint, and
+# the counters are TOTAL_INCREASING: HA reads a drop of more than 10 % as a
+# counter reset and adds the whole restored value to the statistics sum again.
+# At a few hundred watts a five-minute window was large enough to trip that on a
+# young counter; one minute keeps the lost slice under the tolerance from the
+# first minutes of the counter's life.
+ENERGY_SAVE_INTERVAL = timedelta(seconds=60)
+
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
@@ -170,11 +180,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     coordinator.saved_energy = data.energy.as_dict()
 
-    async def save_energy(_event=None):
+    async def save_energy(_event=None, *, immediate=False):
         totals = data.energy.as_dict()
-        if totals != coordinator.saved_energy:
+        if totals == coordinator.saved_energy:
+            return
+        coordinator.saved_energy = totals
+        if immediate:
+            # Teardown: the next setup reads the file back, so it has to be on
+            # disk before this coroutine returns or a reload restores stale
+            # totals from the previous checkpoint.
             await store.async_save(totals)
-            coordinator.saved_energy = totals
+            return
+        # Steady state: async_delay_save coalesces bursts into one write and
+        # registers Store's own final-write listener, so a checkpoint still in
+        # flight is flushed if HA stops before the next tick.
+        store.async_delay_save(lambda: totals, 0)
+
+    async def save_energy_on_stop(_event):
+        await save_energy(immediate=True)
 
     coordinator.save_energy = save_energy
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -185,10 +208,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
     )
     entry.async_on_unload(
-        async_track_time_interval(hass, save_energy, timedelta(minutes=5))
+        async_track_time_interval(hass, save_energy, ENERGY_SAVE_INTERVAL)
     )
     entry.async_on_unload(
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, save_energy)
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, save_energy_on_stop)
     )
     entry.async_on_unload(
         coordinator.async_start()
@@ -205,7 +228,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         if coordinator := hass.data.get(DOMAIN, {}).get(entry.entry_id):
-            await coordinator.save_energy()
+            await coordinator.save_energy(immediate=True)
         # A setup that failed part-way never stored anything, so tolerate both
         # the domain and the entry being absent rather than raising on teardown.
         hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
