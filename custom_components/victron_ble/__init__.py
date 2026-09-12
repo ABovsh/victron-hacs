@@ -33,6 +33,22 @@ from .device import VictronBluetoothDeviceData
 # first minutes of the counter's life.
 ENERGY_SAVE_INTERVAL = timedelta(seconds=60)
 
+# Values whose analytical worth is a trend, not a sample: publishing them at the
+# normal throttle buys nothing and costs a recorder row every time.
+SLOW_KEYS = frozenset(
+    {
+        "consumed_energy",
+        "charged_kwh",
+        "discharged_kwh",
+        "time_remaining",
+        "remaining_mins",
+        "signal_strength",
+    }
+)
+SLOW_KEY_INTERVAL = 300.0
+# Larger than any plausible uptime, so an unseen key is always due.
+_NEVER = 1e9
+
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
@@ -86,14 +102,23 @@ def _make_throttled_update(
     # None (not {}) so the first advertisement always looks like a change.
     _last_states: list[dict[Any, Any] | None] = [None]
     slow_sent: dict[Any, float] = {}
-    slow_keys = {
-        "consumed_energy",
-        "charged_kwh",
-        "discharged_kwh",
-        "time_remaining",
-        "remaining_mins",
-        "signal_strength",
-    }
+
+    def _slow_key_due(key: Any, now: float, recovery: bool) -> bool:
+        """Is this slow-cadence value allowed through at *now*?"""
+        if key.key not in SLOW_KEYS:
+            return True
+        if recovery or now - slow_sent.get(key, -_NEVER) >= SLOW_KEY_INTERVAL:
+            slow_sent[key] = now
+            return True
+        return False
+
+    def _due(now: float, states: dict[Any, Any], recovery: bool) -> bool:
+        """Does this advertisement get forwarded at all?"""
+        return (
+            recovery
+            or states != _last_states[0]
+            or now - _last_sent[0] >= throttle_seconds
+        )
 
     def _throttled(*args: Any, **kwargs: Any) -> SensorUpdate:
         recovery = force()
@@ -102,25 +127,18 @@ def _make_throttled_update(
             return _empty
         now = time.monotonic()
         states = _state_like_values(result)
-        if (
-            recovery
-            or states != _last_states[0]
-            or now - _last_sent[0] >= throttle_seconds
-        ):
-            _last_sent[0] = now
-            _last_states[0] = states
-            values = {}
-            for key, value in result.entity_values.items():
-                if (
-                    key.key not in slow_keys
-                    or recovery
-                    or now - slow_sent.get(key, -100000) >= 300
-                ):
-                    values[key] = value
-                    if key.key in slow_keys:
-                        slow_sent[key] = now
-            return replace(result, entity_values=values)
-        return _empty
+        if not _due(now, states, recovery):
+            return _empty
+        _last_sent[0] = now
+        _last_states[0] = states
+        return replace(
+            result,
+            entity_values={
+                key: value
+                for key, value in result.entity_values.items()
+                if _slow_key_due(key, now, recovery)
+            },
+        )
 
     return _throttled
 
