@@ -175,6 +175,9 @@ async def test_advertisement_becomes_a_rounded_entity_state(
         "custom_components.victron_ble.VictronBluetoothDeviceData"
     ) as device_data:
         device_data.return_value.update.return_value = update
+        import time
+
+        device_data.return_value.last_success_monotonic = time.monotonic()
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 

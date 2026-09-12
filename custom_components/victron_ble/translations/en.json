@@ -39,7 +39,7 @@
           "throttle_seconds": "Minimum seconds between recorded updates"
         },
         "data_description": {
-          "throttle_seconds": "Victron devices advertise about once per second. Values are still parsed at full rate, but only written to Home Assistant this often. State and alarm changes are always written immediately. Set to 0 to disable throttling."
+          "throttle_seconds": "Numeric updates have a 60-second minimum. Energy counters and time estimates have a five-minute minimum. Advertisements are still parsed at full rate and alarm changes are immediate."
         }
       }
     }

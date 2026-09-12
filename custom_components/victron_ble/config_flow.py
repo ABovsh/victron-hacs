@@ -89,7 +89,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[call
         from .device import VictronBluetoothDeviceData
 
         try:
-            VictronBluetoothDeviceData(key).update(service_info)
+            VictronBluetoothDeviceData(key, strict=True).update(service_info)
         except AdvertisementKeyMismatchError:
             return False
         except Exception:  # noqa: BLE001 - any other parse failure is not a key verdict
@@ -180,15 +180,18 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        current = self.config_entry.options.get(
-            CONF_THROTTLE_SECONDS, UPDATE_THROTTLE_SECONDS
+        current = max(
+            60,
+            self.config_entry.options.get(
+                CONF_THROTTLE_SECONDS, UPDATE_THROTTLE_SECONDS
+            ),
         )
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_THROTTLE_SECONDS, default=current): vol.All(
-                        vol.Coerce(int), vol.Range(min=0, max=3600)
+                        vol.Coerce(int), vol.Range(min=60, max=3600)
                     ),
                 }
             ),

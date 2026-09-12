@@ -4,6 +4,30 @@ All notable changes to this fork are listed here. Versions before 0.1.3 are
 upstream [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs) and
 are not tracked in this file.
 
+## Unreleased
+
+### ⚠️ Breaking
+
+- Consumed Energy, time-remaining estimates, RSSI and individual cell-voltage
+  sensors no longer generate long-term statistics. Existing history is retained;
+  entity IDs and units are unchanged. Diagnostic sensors are disabled by default
+  for new installations; existing registry choices are preserved.
+- Numeric publication has a 60-second minimum. Consumed Energy, charged and
+  discharged energy counters, and time estimates publish every five minutes.
+
+### Changes
+
+- Reject wrong advertisement keys during setup and reconfiguration through the
+  actual parser. Invalid frames cannot publish stale or partially decoded data.
+- Mark measurements unavailable after two minutes without a successful decode;
+  recover on the next valid frame. Missing numeric measurements are unavailable.
+- Add persistent SmartShunt charged/discharged kWh counters, calculated from
+  received power samples. Reception gaps over ten seconds and restarts are not
+  extrapolated. Checkpoint every five minutes and on orderly unload/shutdown.
+- Keep the existing Consumed Energy estimate at a five-minute cadence even when
+  alarms bypass the normal publication throttle.
+- Add a diagnostics download containing decode health without keys or addresses.
+
 ## 0.1.10 — 2026-08-03
 
 Triage of the 58 open issues on the upstream project, which has had no commit

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from typing import Any, Dict, Optional, Tuple, Union
 
 from bluetooth_sensor_state_data import SIGNAL_STRENGTH_KEY
@@ -20,6 +21,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.sensor import sensor_device_info_to_hass_device_info
@@ -145,7 +147,8 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         key=VictronSensor.TIME_REMAINING,
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=Units.TIME_MINUTES,
-        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
     ),
     (
         VictronSensor.INPUT_VOLTAGE,
@@ -269,11 +272,8 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         key=VictronSensor.CONSUMED_ENERGY,
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=Units.ENERGY_WATT_HOUR,
-        # Consumed energy tracks discharge since the last full charge and resets
-        # to 0 when recharged, so it is not monotonic. TOTAL (not TOTAL_INCREASING)
-        # permits resets/decreases without the "not strictly increasing" warning,
-        # while staying valid for the ENERGY device class.
-        state_class=SensorStateClass.TOTAL,
+        # Voltage times charge deficit is an estimate, not an energy counter.
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     (VictronSensor.CONSUMED_AH, "Ah"): SensorEntityDescription(
         key=VictronSensor.CONSUMED_AH,
@@ -477,7 +477,8 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
         key=VictronSensor.REMAINING_MINS,
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=Units.TIME_MINUTES,
-        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
     ),
     (VictronSensor.CONSUMED_AH, None): SensorEntityDescription(
         key=VictronSensor.CONSUMED_AH,
@@ -486,6 +487,28 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
     ),
 }
 
+for _map_key, _description in list(SENSOR_DESCRIPTIONS.items()):
+    if _map_key[0] == SIGNAL_STRENGTH_KEY or str(_map_key[0]).startswith(
+        "cell_voltage_"
+    ):
+        SENSOR_DESCRIPTIONS[_map_key] = replace(
+            _description,
+            state_class=None,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            entity_registry_enabled_default=False,
+        )
+
+for _energy_key in ("charged_kwh", "discharged_kwh"):
+    SENSOR_DESCRIPTIONS[(_energy_key, Units.ENERGY_KILO_WATT_HOUR)] = (
+        SensorEntityDescription(
+            key=_energy_key,
+            device_class=SensorDeviceClass.ENERGY,
+            native_unit_of_measurement=Units.ENERGY_KILO_WATT_HOUR,
+            state_class=SensorStateClass.TOTAL_INCREASING,
+            suggested_display_precision=3,
+        )
+    )
+
 
 # Round native values at the source to cut HA recorder writes. The recorder
 # stores a row on every state *change*, so trimming jittery trailing digits
@@ -493,6 +516,8 @@ SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
 # states into one. Note: suggested_display_precision only rounds the *display* and
 # does not reduce writes — this rounds the stored value. precision 0 -> int.
 _PRECISION_BY_KEY: Dict[str, int] = {
+    "charged_kwh": 3,
+    "discharged_kwh": 3,
     VictronSensor.CONSUMED_AH: 0,
     VictronSensor.CONSUMED_ENERGY: 0,
     VictronSensor.OUTPUT_POWER: 0,
@@ -619,6 +644,13 @@ class VictronBluetoothSensorEntity(
     SensorEntity,
 ):
     """Representation of a Victron device that emits Instant Readout advertisements."""
+
+    @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and self.processor.entity_data.get(self.entity_key) is not None
+        )
 
     @property
     def native_value(self) -> int | float | None:

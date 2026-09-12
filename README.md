@@ -17,6 +17,27 @@
 
 ## Why this fork
 
+### SmartShunt energy and recorder behaviour (working branch)
+
+Charged kWh and Discharged kWh integrate received power samples separately,
+using the previous sample over each interval. They start at zero when first
+installed, persist across restarts, and publish to Home Assistant every five
+minutes at 0.001 kWh resolution. Missing packets spanning more than ten seconds
+are not extrapolated, so these are observed-energy estimates, not billing meters.
+An abrupt host failure can lose up to five minutes since the last checkpoint.
+
+The existing Consumed Energy entity remains an instantaneous estimate of the
+charge deficit (`voltage × consumed Ah`), not cumulative discharged energy.
+It now publishes at most every five minutes and has no long-term statistics.
+Use the new charged/discharged counters for battery energy accounting.
+Existing recorded history is not deleted.
+
+Normal numeric telemetry has a 60-second minimum interval. Alarms remain
+immediate; they do not accelerate energy-counter or time-estimate publication.
+Decode health is available through Download diagnostics without continuously
+recorded age/failure sensors. After two minutes without a valid decoded frame,
+measurements become unavailable and recover on the next valid frame.
+
 Fork of [keshavdv/victron-hacs](https://github.com/keshavdv/victron-hacs). The
 upstream integration is a thin passive-BLE listener: it pushes a fresh state to
 Home Assistant on **every** advertisement, and Victron devices advertise at

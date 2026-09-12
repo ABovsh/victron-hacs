@@ -1,9 +1,11 @@
 import logging
+import time
+from datetime import datetime, timezone
 
 from bluetooth_sensor_state_data import BluetoothData
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.helpers.service_info.bluetooth import BluetoothServiceInfo
-from sensor_state_data import SensorLibrary
+from sensor_state_data import SensorLibrary, SensorUpdate
 from sensor_state_data.enum import StrEnum
 from sensor_state_data.units import Units
 from victron_ble.devices import detect_device_type
@@ -20,6 +22,8 @@ from victron_ble.devices.smart_battery_protect import SmartBatteryProtectData
 from victron_ble.devices.smart_lithium import SmartLithiumData
 from victron_ble.devices.solar_charger import SolarChargerData
 from victron_ble.devices.vebus import VEBusData
+
+from .energy import EnergyAccumulator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,10 +88,31 @@ _WARNED_PARSE_FAILURES: set[str] = set()
 class VictronBluetoothDeviceData(BluetoothData):
     """Data for Victron BLE sensors."""
 
-    def __init__(self, key) -> None:
+    def __init__(self, key, *, strict=False) -> None:
         """Initialize the class."""
         super().__init__()
         self.key = key
+        self.strict = strict
+        self.last_success_monotonic: float | None = None
+        self.last_success_utc: datetime | None = None
+        self.consecutive_failures = 0
+        self.energy = EnergyAccumulator()
+        self._frame_valid = False
+
+    def update(self, data) -> SensorUpdate:
+        """Publish only complete decoded frames; never refresh stale data."""
+        self._frame_valid = False
+        self._sensor_values_updates = {}
+        self._sensor_descriptions_updates = {}
+        result = super().update(data)
+        if not self._frame_valid:
+            self.consecutive_failures += 1
+            self.energy.update(None, time.monotonic())
+            return SensorUpdate(title=None, devices={})
+        self.consecutive_failures = 0
+        self.last_success_monotonic = time.monotonic()
+        self.last_success_utc = datetime.now(timezone.utc)
+        return result
 
     @staticmethod
     def _warn_parse_failure(address: str, err: Exception) -> None:
@@ -126,6 +151,8 @@ class VictronBluetoothDeviceData(BluetoothData):
                     address, local_name, mfr_id, mfr_data, service_uuids
                 )
             except Exception as err:  # noqa: BLE001
+                if self.strict:
+                    raise
                 # One advertisement the library cannot parse must not take the
                 # device down. Victron keeps extending its enums and frame
                 # layouts, and an unknown value raises out of the coordinator's
@@ -133,6 +160,7 @@ class VictronBluetoothDeviceData(BluetoothData):
                 # sensor of that device stops. Warn once per device instead.
                 self._warn_parse_failure(address, err)
             else:
+                self._frame_valid = True
                 _WARNED_PARSE_FAILURES.discard(address)
 
     def _process_mfr_data(
@@ -467,16 +495,41 @@ class VictronBluetoothDeviceData(BluetoothData):
                 key=VictronSensor.OUTPUT_POWER,
                 name="Power",
                 native_unit_of_measurement=Units.POWER_WATT,
-                native_value=parsed.get_voltage() * parsed.get_current(),
+                native_value=(
+                    parsed.get_voltage() * parsed.get_current()
+                    if parsed.get_voltage() is not None
+                    and parsed.get_current() is not None
+                    else None
+                ),
                 device_class=SensorDeviceClass.POWER,
             )
             self.update_sensor(
                 key=VictronSensor.CONSUMED_ENERGY,
                 name="Consumed Energy",
                 native_unit_of_measurement=Units.ENERGY_WATT_HOUR,
-                native_value=parsed.get_voltage() * parsed.get_consumed_ah() * -1,
+                native_value=(
+                    parsed.get_voltage() * parsed.get_consumed_ah() * -1
+                    if parsed.get_voltage() is not None
+                    and parsed.get_consumed_ah() is not None
+                    else None
+                ),
                 device_class=SensorDeviceClass.ENERGY,
             )
+            power = (
+                parsed.get_voltage() * parsed.get_current()
+                if parsed.get_voltage() is not None and parsed.get_current() is not None
+                else None
+            )
+            self.energy.update(power, time.monotonic())
+            self.set_precision(6)
+            for key, total in self.energy.as_dict().items():
+                self.update_sensor(
+                    key=key,
+                    name=key.replace("_", " ").capitalize(),
+                    native_unit_of_measurement=Units.ENERGY_KILO_WATT_HOUR,
+                    native_value=total if power is not None else None,
+                    device_class=SensorDeviceClass.ENERGY,
+                )
         elif isinstance(parsed, BatterySenseData):
             self.update_predefined_sensor(
                 SensorLibrary.TEMPERATURE__CELSIUS, parsed.get_temperature()
