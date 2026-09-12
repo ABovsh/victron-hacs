@@ -45,7 +45,7 @@ from .device import VictronSensor
 _LOGGER = logging.getLogger(__name__)
 
 
-SENSOR_DESCRIPTIONS: Dict[Tuple[SensorDeviceClass, Optional[Units]], Any] = {
+SENSOR_DESCRIPTIONS: Dict[Tuple[str, Optional[str]], Any] = {
     (SensorDeviceClass.TEMPERATURE, Units.TEMP_CELSIUS): SensorEntityDescription(
         key=f"{SensorDeviceClass.TEMPERATURE}_{Units.TEMP_CELSIUS}",
         device_class=SensorDeviceClass.TEMPERATURE,

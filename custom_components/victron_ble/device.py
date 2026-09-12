@@ -7,6 +7,9 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.helpers.service_info.bluetooth import BluetoothServiceInfo
 from sensor_state_data import SensorLibrary, SensorUpdate
 from sensor_state_data.enum import StrEnum
+from sensor_state_data.sensor.device_class import (
+    SensorDeviceClass as DataSensorDeviceClass,
+)
 from sensor_state_data.units import Units
 from victron_ble.devices import detect_device_type
 from victron_ble.devices.ac_charger import AcChargerData
@@ -515,9 +518,10 @@ class VictronBluetoothDeviceData(BluetoothData):
                 ),
                 device_class=SensorDeviceClass.ENERGY,
             )
+            voltage, current = parsed.get_voltage(), parsed.get_current()
             power = (
-                parsed.get_voltage() * parsed.get_current()
-                if parsed.get_voltage() is not None and parsed.get_current() is not None
+                voltage * current
+                if voltage is not None and current is not None
                 else None
             )
             self.energy.update(power, time.monotonic())
@@ -528,7 +532,7 @@ class VictronBluetoothDeviceData(BluetoothData):
                     name=key.replace("_", " ").capitalize(),
                     native_unit_of_measurement=Units.ENERGY_KILO_WATT_HOUR,
                     native_value=total if power is not None else None,
-                    device_class=SensorDeviceClass.ENERGY,
+                    device_class=DataSensorDeviceClass.ENERGY,
                 )
         elif isinstance(parsed, BatterySenseData):
             self.update_predefined_sensor(
